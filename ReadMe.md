@@ -1,4 +1,4 @@
-#DESIGN PATTERNS
+# DESIGN PATTERNS
 
 This project contains programs written in C++  which demonstrate the use of Design Patterns.
 
