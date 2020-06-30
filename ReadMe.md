@@ -17,6 +17,12 @@ All the programs have the following directory structure:
 
 ## COMPILING THE PROGRAMS
 
+In order to compile the `Memento` design patter demonstration program, please install `libncurses`. If you are running in a Debian based distribution you can install it by typing:
+
+<pre>
+$ sudo apt install libncurses5-dev libncursesw5-dev 
+</pre>
+
 There is a `Makefile` in the top level directory, which enables the compilation of all the programs at once just by typing:
 
 <pre>
