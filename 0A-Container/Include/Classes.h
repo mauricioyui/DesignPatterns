@@ -11,57 +11,60 @@
 #include <typeinfo>
 
 
-template <class T>
+
 class Contents
 {
+  public:
+    Contents()
+    { printf("Contents constructor\n"); };
+
+    virtual ~Contents()
+    { printf("Contents destructor\n"); };
+};
+
+
+
+template <class T>
+class ContentsType: public Contents
+{
   private:
-    T *value;
+    T *value_;
 
   public:
-    Contents(T value_):
-      value(NULL)
+    ContentsType(T value):
+      value_(NULL)
     {
-      printf("Contents constructor: type: %s\n", typeid(value_).name());
-      set(value_);
-      printf("Contents constructor: end\n");
+      printf("ContentsType constructor: type: %s\n", typeid(value).name());
+      set(value);
     }
 
-    ~Contents()
+    ~ContentsType()
     {
-      printf("~Contents destructor\n");
+      printf("~ContentsType destructor\n");
       clear();
     }
 
     void clear()
     {
-      printf("Contents clear: 01\n");
-      if(value != NULL)
+      if(value_ != NULL)
       {
-        printf("Contents clear: %s\n", typeid(value).name());
-        delete value;
-        value = NULL;
+        printf("ContentsType: clear: %s\n", typeid(value_).name());
+        delete value_;
+        value_ = NULL;
       }
-      printf("Contents clear: 03\n");
     }
 
-    void * get()
+    T get()
     {
-      return static_cast< void * >(value);
+      return *value_;
     }
 
-    void set(T value_)
+    void set(T value)
     {
-      printf("Contents set: 01\n");
-      T *p_ = (T *)malloc(sizeof(T));
-      printf("Contents set: 02\n");
-      *p_ = value_;
-      printf("Contents set: 03\n");
-
       clear();
-      printf("Contents set: 04\n");
 
-      value = p_;
-      printf("Contents set: 05\n");
+      T *p_ = new T(value);
+      value_ = p_;
     }
 };
 
@@ -70,40 +73,31 @@ class Contents
 class Container
 {
   private:
-    void *contents;
+    Contents *contents_;
 
   public:
-    Container(void *contents_):
-    contents(contents_)
+    Container(Contents *contents):
+    contents_(contents)
     {
       printf("Container constructor\n");
     };
 
     ~Container()
     {
-      printf("Container destructor\n");
+      printf("\nContainer destructor\n");
+      delete contents_;
     };
-
-    void * get()
-    {
-      return contents;
-      // int dummy = 0;
-      // return static_cast< Contents< dummy > * >(contents)->get();
-    };
-
-    // template< typename T >
-    // T get()
-    // {
-    //   // return *static_cast< T * >(static_cast< Contents< T > * >(contents)->get());
-    //   T t_ = *static_cast< Contents< T > * >(contents)->get();
-    //   return t_;
-    // };
 
     template< typename T >
-    void set(T value_)
+    T get()
     {
-      // (Contents< T >*)contents->set(value_);
-      static_cast< Contents< T > * >(contents)->set(value_);
+      return static_cast< ContentsType< T > * >(contents_)->get();
+    };
+
+    template< typename T >
+    void set(T value)
+    {
+      static_cast< ContentsType< T > * >(contents_)->set(value);
     };
 };
 
@@ -122,54 +116,36 @@ class Train
       {
         printf("Train destructor\n");
         for(std::map< std::string, Container * >::iterator itr = pod.begin(); itr != pod.end(); ++itr)
-        {
           delete itr->second;
-        };
       };
 
     template< typename T >
-    void set(std::string name_, T value_)
+    void set(std::string name, T value)
     {
-      std::map< std::string, Container * >::iterator itr = pod.find(name_);
+      std::map< std::string, Container * >::iterator itr = pod.find(name);
 
       if(itr == pod.end())
       {
-        void *contents_ = new Contents(value_);
-        pod.insert(std::make_pair< std::string, Container * >(name_.c_str(), new Container(contents_)));
+        Contents *contents_ = new ContentsType(value);
+        pod.insert(std::make_pair< std::string, Container * >(name.c_str(), new Container(contents_)));
       }
       else
-      {
-        pod[name_.c_str()]->set(value_);
-      }
+        pod[name.c_str()]->set(value);
     }
 
     template< typename T >
-    T get(std::string name_)
+    T get(std::string name)
     {
       T var_ = 0;
 
-      std::map< std::string, Container * >::iterator itr = pod.find(name_);
+      std::map< std::string, Container * >::iterator itr = pod.find(name);
       if(itr != pod.end())
-      {
-        Container *container_ = pod[name_.c_str()];
-        Contents< T > * contents_ = static_cast< Contents< T > * >(container_->get());
+        var_ = pod[name.c_str()]->get< T >();
 
-        var_ = *(static_cast< T * >(contents_->get()));
-      }
       return var_;
     }
-
-    template< typename T >
-    void clear(std::string name_)
-    {
-      std::map< std::string, Container * >::iterator itr = pod.find(name_);
-      if(itr != pod.end())
-      {
-        Container *container_ = pod[name_.c_str()];
-        Contents< T > * contents_ = static_cast< Contents< T > * >(container_->get());
-        contents_->clear();
-      }
-    }
 };
+
+
 
 #endif
